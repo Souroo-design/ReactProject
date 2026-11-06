@@ -25,7 +25,7 @@ export const AdminMenuModal = ({ isOpen, onClose, onSave, editingItem }) => {
     'Hyderabadi Shahi Kitchen',
   ];
 
-  const mealTypes = ['Breakfast', 'Starters', 'Lunch', 'Dinner', 'Beverages & Sweets'];
+  const mealTypes = ['Breakfast', 'Starters', 'Lunch', 'Snacks', 'Dinner', 'Beverages & Sweets'];
 
   useEffect(() => {
     if (editingItem) {

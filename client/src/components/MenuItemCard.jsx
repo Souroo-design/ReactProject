@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Leaf, Flame, Clock, ToggleLeft, ToggleRight, Edit3, Trash2, Check, X, Store, Sun, Sunrise, Sunset, Moon, Star, Utensils } from 'lucide-react';
 
 export const MenuItemCard = ({
@@ -129,6 +130,19 @@ export const MenuItemCard = ({
           </div>
         </div>
       </div>
+
+      {/* Customer Explore Action Bar */}
+      {!isAdminView && (
+        <div className="p-4 pt-0">
+          <Link
+            to={`/menu?restaurant=${encodeURIComponent(restaurantName || 'Bukhara Royal Grill')}`}
+            className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-white text-slate-800 dark:text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+          >
+            <Utensils className="w-3.5 h-3.5" />
+            Explore at {restaurantName || 'Restaurant'}
+          </Link>
+        </div>
+      )}
 
       {/* Admin Action Bar */}
       {isAdminView && (

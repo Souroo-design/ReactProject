@@ -17,6 +17,11 @@ export const createReservation = async (req, res, next) => {
       specialRequests,
       preOrderedItems,
       totalAmount,
+      orderType,
+      deliveryAddress,
+      paymentMethod,
+      paymentStatus,
+      transactionId,
     } = req.body;
 
     if (!guestName || !guestEmail || !guestPhone || !partySize || !reservationDate || !timeSlot) {
@@ -40,6 +45,11 @@ export const createReservation = async (req, res, next) => {
         specialRequests: specialRequests || '',
         preOrderedItems: Array.isArray(preOrderedItems) ? preOrderedItems : [],
         totalAmount: Number(totalAmount) || 0,
+        orderType: orderType || 'Dine-In Table',
+        deliveryAddress: deliveryAddress || '',
+        paymentMethod: paymentMethod || 'Cash',
+        paymentStatus: paymentStatus || 'cash_on_delivery',
+        transactionId: transactionId || null,
         status: 'pending',
       });
 
@@ -59,6 +69,11 @@ export const createReservation = async (req, res, next) => {
         specialRequests: specialRequests || '',
         preOrderedItems: Array.isArray(preOrderedItems) ? preOrderedItems : [],
         totalAmount: Number(totalAmount) || 0,
+        orderType: orderType || 'Dine-In Table',
+        deliveryAddress: deliveryAddress || '',
+        paymentMethod: paymentMethod || 'Cash',
+        paymentStatus: paymentStatus || 'cash_on_delivery',
+        transactionId: transactionId || null,
         status: 'pending',
         createdAt: new Date().toISOString(),
       };

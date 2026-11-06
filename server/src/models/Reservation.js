@@ -59,6 +59,29 @@ const reservationSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    orderType: {
+      type: String,
+      enum: ['Dine-In Table', 'Takeaway Pickup', 'Doorstep Delivery'],
+      default: 'Dine-In Table',
+    },
+    deliveryAddress: {
+      type: String,
+      default: '',
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['Cash', 'QR Code Scan', 'UPI', 'Credit/Debit Card', 'Pay at Restaurant'],
+      default: 'Cash',
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['pay_at_counter', 'cash_on_delivery', 'completed', 'pending', 'refunded'],
+      default: 'cash_on_delivery',
+    },
+    transactionId: {
+      type: String,
+      default: null,
+    },
     status: {
       type: String,
       enum: ['pending', 'confirmed', 'seated', 'completed', 'cancelled'],

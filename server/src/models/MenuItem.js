@@ -15,7 +15,7 @@ const menuItemSchema = new mongoose.Schema(
     mealType: {
       type: String,
       required: [true, 'Meal type is required'],
-      enum: ['Breakfast', 'Starters', 'Lunch', 'Dinner', 'Beverages & Sweets'],
+      enum: ['Breakfast', 'Starters', 'Lunch', 'Snacks', 'Dinner', 'Beverages & Sweets'],
       default: 'Lunch',
     },
     description: {

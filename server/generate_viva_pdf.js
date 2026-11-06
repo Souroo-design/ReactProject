@@ -2,19 +2,20 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 
-const desktopPdfPath = 'C:\\Users\\soura\\OneDrive\\Desktop\\DineEase_Project_Viva_Guide.pdf';
 const projectPdfPath = 'C:\\Users\\soura\\OneDrive\\Desktop\\ReactProject\\DineEase_Project_Viva_Guide.pdf';
+const desktopPdfPath = 'C:\\Users\\soura\\OneDrive\\Desktop\\DineEase_Project_Viva_Guide_Latest.pdf';
 
 const doc = new PDFDocument({
   size: 'A4',
   margin: 40,
 });
 
-const writeStreamDesktop = fs.createWriteStream(desktopPdfPath);
 const writeStreamProject = fs.createWriteStream(projectPdfPath);
-
-doc.pipe(writeStreamDesktop);
 doc.pipe(writeStreamProject);
+
+const writeStreamDesktop = fs.createWriteStream(desktopPdfPath);
+writeStreamDesktop.on('error', (err) => console.log('[Notice] Desktop stream error:', err.message));
+doc.pipe(writeStreamDesktop);
 
 // Styling constants
 const primaryColor = '#0F172A';
@@ -151,7 +152,19 @@ const qaList = [
     a: 'Staff/Admin can toggle menu availability in 1 click, add/edit dishes, view incoming reservations, and update booking status (Pending -> Confirmed -> Seated -> Completed -> Cancelled).',
   },
   {
-    q: 'Q12: How would you scale this application for production deployment?',
+    q: 'Q12: How does the Dual Payment Gateway (Cash vs QR Code Scan) work?',
+    a: 'For pre-ordered meals, users can choose between Instant UPI QR Code Scan (supports GPay, PhonePe, Paytm with dynamic transaction IDs) or Cash Payment (Cash on Delivery or Pay at Counter after dining). Both modes are tracked in MongoDB.',
+  },
+  {
+    q: 'Q13: How does the system handle different modes of delivery and service?',
+    a: 'DineEase supports 3 service modes: Dine-In Table (with seating preference: Window, Patio, Booth), Takeaway Pickup, and Doorstep Delivery (with street address validation). All are saved in the reservation document.',
+  },
+  {
+    q: 'Q14: How does the Menu Catalog organize dishes by restaurant and meal time?',
+    a: 'Using URL search parameters (/menu?restaurant=...), users can explore distinct restaurant outlets and filter dishes by meal timing: Breakfast, Starters, Lunch, Snacks, Dinner, and Sweets, fetched live from MongoDB.',
+  },
+  {
+    q: 'Q15: How would you scale this application for production deployment?',
     a: 'Deploy React frontend to Vercel CDN, host Express backend on AWS EC2, connect to a MongoDB Atlas cluster, and integrate Redis for menu query caching & session blacklisting.',
   },
 ];

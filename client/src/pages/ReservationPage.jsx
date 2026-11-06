@@ -1,18 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, Users, MapPin, CheckCircle, Sparkles, MessageSquare, Phone, Mail, User, Store, Plus, Minus, Utensils, ArrowRight, ArrowLeft, Star, Check, Sunrise, Sun, Moon, Flame, Leaf } from 'lucide-react';
+import {
+  Calendar as CalendarIcon, Clock, Users, MapPin, CheckCircle, Sparkles,
+  MessageSquare, Phone, Mail, User, Store, Plus, Minus, Utensils,
+  ArrowRight, ArrowLeft, Star, Check, Sunrise, Sun, Moon, Flame, Leaf,
+  Bike, ShoppingBag, Banknote, QrCode, Lock,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../api/axiosInstance';
 import { Link, useLocation } from 'react-router-dom';
+import { PaymentModal } from '../components/PaymentModal';
 
 export const ReservationPage = () => {
   const { user } = useAuth();
   const location = useLocation();
 
+  // Items/restaurant pre-selected from MenuPage navigation state
+  const navState = location.state || {};
+
   // Wizard Step: 1 = Choose Restaurant, 2 = Table & Guest Details, 3 = Pre-Order Food, 4 = Confirmation
-  const [step, setStep] = useState(1);
+  // If we came from MenuPage with a restaurant + pre-selected items, skip Step 1 and go straight to Step 2
+  const [step, setStep] = useState(navState.restaurantName ? 2 : 1);
 
   // Selected Restaurant
-  const [selectedRestaurant, setSelectedRestaurant] = useState('Bukhara Royal Grill');
+  const [selectedRestaurant, setSelectedRestaurant] = useState(navState.restaurantName || 'Bukhara Royal Grill');
+
+  // Delivery / Dining Mode State
+  const [orderType, setOrderType] = useState('Dine-In Table'); // 'Dine-In Table' | 'Takeaway Pickup' | 'Doorstep Delivery'
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+
+  // Payment Gateway Modal State
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   // Booking Form State
   const [guestName, setGuestName] = useState(user?.name || '');
@@ -25,15 +42,24 @@ export const ReservationPage = () => {
     return tomorrow.toISOString().split('T')[0];
   });
   const [timeSlot, setTimeSlot] = useState('19:00');
-  const [seatingPreference, setSeatingPreference] = useState('Standard');
+  const [seatingPreference, setSeatingPreference] = useState(navState.seatingPreference || 'Standard');
   const [specialRequests, setSpecialRequests] = useState('');
 
   // Pre-Order State & Filtering
   const [restaurantMenu, setRestaurantMenu] = useState([]);
   const [menuLoading, setMenuLoading] = useState(false);
-  const [preOrderCart, setPreOrderCart] = useState({}); // { itemId: quantity }
   const [preOrderMealFilter, setPreOrderMealFilter] = useState('All');
   const [preOrderDietFilter, setPreOrderDietFilter] = useState('All');
+
+  // Seed cart from MenuPage navigation state if present
+  const buildInitialCart = () => {
+    const items = navState.preSelectedItems || [];
+    return items.reduce((acc, it) => {
+      if (it.menuItemId && it.quantity > 0) acc[it.menuItemId] = it.quantity;
+      return acc;
+    }, {});
+  };
+  const [preOrderCart, setPreOrderCart] = useState(buildInitialCart); // { itemId: quantity }
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -115,6 +141,19 @@ export const ReservationPage = () => {
     }
   }, [step, selectedRestaurant]);
 
+  // If navigated from MenuPage with pre-selected items, seed a minimal restaurantMenu stub
+  // so cart totals resolve correctly before Step 3 fully loads
+  useEffect(() => {
+    const items = navState.preSelectedItems || [];
+    if (items.length > 0) {
+      setRestaurantMenu((prev) => {
+        if (prev.length > 0) return prev;
+        return items.map((it) => ({ _id: it.menuItemId, name: it.name, price: it.price }));
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Cart helper functions
   const updatePreOrderQuantity = (itemId, change) => {
     setPreOrderCart((prev) => {
@@ -156,16 +195,26 @@ export const ReservationPage = () => {
       setError('Please fill in your name, email, and phone number.');
       return;
     }
+    if (orderType === 'Doorstep Delivery' && !deliveryAddress.trim()) {
+      setError('Please provide your complete delivery street address.');
+      return;
+    }
     setStep(3); // Move to pre-order step
   };
 
-  const handleFinalSubmit = async () => {
+  const handleFinalSubmit = async (customPayment = null) => {
     setError('');
     setLoading(true);
 
     try {
       const preItems = getPreOrderedItemsList();
       const totalAmt = calculatePreOrderTotal();
+
+      const activePayment = customPayment || {
+        paymentMethod: 'Cash',
+        paymentStatus: orderType === 'Doorstep Delivery' ? 'cash_on_delivery' : 'pay_at_counter',
+        transactionId: null,
+      };
 
       const payload = {
         restaurantName: selectedRestaurant,
@@ -177,13 +226,19 @@ export const ReservationPage = () => {
         timeSlot,
         seatingPreference,
         specialRequests,
+        orderType,
+        deliveryAddress: orderType === 'Doorstep Delivery' ? deliveryAddress.trim() : '',
         preOrderedItems: preItems,
         totalAmount: totalAmt,
+        paymentMethod: activePayment.paymentMethod,
+        paymentStatus: activePayment.paymentStatus,
+        transactionId: activePayment.transactionId,
       };
 
       const { data } = await axiosInstance.post('/reservations', payload);
       if (data.success) {
         setSuccessBooking(data.data);
+        setIsPaymentModalOpen(false);
         setStep(4); // Move to final receipt step
 
         // Save reservation ID locally
@@ -201,6 +256,15 @@ export const ReservationPage = () => {
       setError(err.response?.data?.message || 'Failed to complete table reservation.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProceedToPaymentOrConfirm = () => {
+    const totalAmt = calculatePreOrderTotal();
+    if (totalAmt > 0) {
+      setIsPaymentModalOpen(true);
+    } else {
+      handleFinalSubmit();
     }
   };
 
@@ -299,6 +363,7 @@ export const ReservationPage = () => {
                   type="button"
                   onClick={() => {
                     setSelectedRestaurant(rest.name);
+                    setPreOrderCart({});
                     setStep(2);
                   }}
                   className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
@@ -336,6 +401,18 @@ export const ReservationPage = () => {
               <ArrowLeft className="w-3.5 h-3.5" /> Change Restaurant
             </button>
           </div>
+
+          {/* Pre-selected dishes banner (from MenuPage) */}
+          {navState.preSelectedItems && navState.preSelectedItems.length > 0 && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-5 py-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                <Utensils className="w-4 h-4" />
+                {navState.preSelectedItems.length} dish{navState.preSelectedItems.length > 1 ? 'es' : ''} pre-selected from menu
+                &nbsp;·&nbsp; ₹{(navState.totalAmount || 0).toLocaleString('en-IN')} pre-order total
+              </div>
+              <span className="text-[11px] text-slate-500">These will carry over to Step 3 (Pre-Order)</span>
+            </div>
+          )}
 
           {/* Guest Contact Details */}
           <div className="space-y-4">
@@ -387,6 +464,55 @@ export const ReservationPage = () => {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Service & Delivery Mode */}
+          <div className="space-y-2 pt-2">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Bike className="w-4 h-4 text-amber-500" />
+              Service & Delivery Mode
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { type: 'Dine-In Table', label: 'Dine-In Table', desc: 'Reserve a table to dine inside restaurant', icon: <Store className="w-4 h-4 text-emerald-500" /> },
+                { type: 'Takeaway Pickup', label: 'Takeaway Pickup', desc: 'Pick up freshly packed order at counter', icon: <ShoppingBag className="w-4 h-4 text-amber-500" /> },
+                { type: 'Doorstep Delivery', label: 'Doorstep Delivery', desc: 'Dishes delivered hot to your address', icon: <Bike className="w-4 h-4 text-rose-500" /> },
+              ].map((m) => (
+                <button
+                  key={m.type}
+                  type="button"
+                  onClick={() => setOrderType(m.type)}
+                  className={`p-3.5 rounded-2xl border text-left transition-all ${
+                    orderType === m.type
+                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs ring-1 ring-emerald-500/30'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    {m.icon}
+                    <span className="text-xs font-bold">{m.label}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-normal leading-snug">{m.desc}</p>
+                </button>
+              ))}
+            </div>
+
+            {orderType === 'Doorstep Delivery' && (
+              <div className="pt-2 animate-fade-in">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Delivery Street Address & Landmark *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  placeholder="e.g. Flat 304, Sunshine Towers, Connaught Place, New Delhi"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+            )}
           </div>
 
           {/* Party Size & Date */}
@@ -611,6 +737,7 @@ export const ReservationPage = () => {
                 { label: 'Breakfast', value: 'Breakfast', icon: <Sunrise className="w-3.5 h-3.5 text-amber-500" /> },
                 { label: 'Starters', value: 'Starters', icon: <Flame className="w-3.5 h-3.5 text-emerald-500" /> },
                 { label: 'Lunch', value: 'Lunch', icon: <Sun className="w-3.5 h-3.5 text-amber-500" /> },
+                { label: 'Snacks', value: 'Snacks', icon: <Utensils className="w-3.5 h-3.5 text-orange-500" /> },
                 { label: 'Dinner', value: 'Dinner', icon: <Moon className="w-3.5 h-3.5 text-purple-400" /> },
                 { label: 'Sweets & Drinks', value: 'Beverages & Sweets', icon: <Sparkles className="w-3.5 h-3.5 text-rose-400" /> },
               ].map((tab) => {
@@ -783,20 +910,30 @@ export const ReservationPage = () => {
             <div className="flex gap-2 w-full sm:w-auto">
               <button
                 type="button"
-                onClick={handleFinalSubmit}
+                onClick={() => handleFinalSubmit()}
                 disabled={loading}
                 className="flex-1 sm:flex-none px-5 py-3.5 rounded-2xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                Skip Pre-Order & Confirm Table
+                Skip Pre-Order & Confirm
               </button>
 
               <button
                 type="button"
-                onClick={handleFinalSubmit}
+                onClick={handleProceedToPaymentOrConfirm}
                 disabled={loading}
                 className="flex-1 sm:flex-none px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs shadow-glow flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
-                {loading ? 'Confirming Reservation...' : 'Confirm Table & Pre-Orders'}
+                {loading ? (
+                  'Confirming Booking...'
+                ) : calculatePreOrderTotal() > 0 ? (
+                  <>
+                    <QrCode className="w-4 h-4" />
+                    <span>Proceed to Payment (Cash / QR)</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                ) : (
+                  'Confirm Table Booking'
+                )}
               </button>
             </div>
           </div>
@@ -811,10 +948,10 @@ export const ReservationPage = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Table Reservation & Pre-Orders Confirmed!
+              Booking & Order Confirmed!
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-              We look forward to hosting you at <strong className="text-amber-500">{successBooking.restaurantName}</strong>.
+              Your request for <strong className="text-amber-500">{successBooking.restaurantName}</strong> has been received successfully.
             </p>
           </div>
 
@@ -828,6 +965,27 @@ export const ReservationPage = () => {
               <span className="font-mono font-bold text-amber-500">{successBooking._id}</span>
             </div>
             <div className="flex justify-between">
+              <span className="text-slate-500">Service Mode:</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                {successBooking.orderType === 'Doorstep Delivery' ? (
+                  <Bike className="w-4 h-4 text-rose-500" />
+                ) : successBooking.orderType === 'Takeaway Pickup' ? (
+                  <ShoppingBag className="w-4 h-4 text-amber-500" />
+                ) : (
+                  <Store className="w-4 h-4 text-emerald-500" />
+                )}
+                {successBooking.orderType || 'Dine-In Table'}
+              </span>
+            </div>
+
+            {successBooking.deliveryAddress && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Delivery Address:</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200 text-right max-w-xs">{successBooking.deliveryAddress}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between">
               <span className="text-slate-500">Guest Name:</span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">{successBooking.guestName}</span>
             </div>
@@ -838,6 +996,40 @@ export const ReservationPage = () => {
             <div className="flex justify-between">
               <span className="text-slate-500">Party Size & Seating:</span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">{successBooking.partySize} Guests ({successBooking.seatingPreference})</span>
+            </div>
+
+            {/* Payment Summary */}
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Payment Mode:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                  {successBooking.paymentMethod?.includes('QR') ? (
+                    <QrCode className="w-4 h-4 text-emerald-500" />
+                  ) : successBooking.paymentMethod === 'Cash' ? (
+                    <Banknote className="w-4 h-4 text-amber-500" />
+                  ) : (
+                    <Lock className="w-4 h-4 text-emerald-500" />
+                  )}
+                  {successBooking.paymentMethod || 'Cash'}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-slate-500">Payment Status:</span>
+                <span
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold capitalize ${
+                    successBooking.paymentStatus === 'completed'
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                  }`}
+                >
+                  {successBooking.paymentStatus === 'completed'
+                    ? `Paid Online (Ref: ${successBooking.transactionId || 'Confirmed'})`
+                    : successBooking.paymentStatus === 'cash_on_delivery'
+                    ? 'Cash on Delivery (Pay on Arrival)'
+                    : 'Pay at Counter / Table'}
+                </span>
+              </div>
             </div>
 
             {/* Pre-ordered items breakdown */}
@@ -878,6 +1070,19 @@ export const ReservationPage = () => {
           </div>
         </div>
       )}
+
+      {/* Interactive Payment Gateway Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        totalAmount={calculatePreOrderTotal()}
+        restaurantName={selectedRestaurant}
+        orderType={orderType}
+        preOrderedItems={getPreOrderedItemsList()}
+        onPaymentSuccess={(paymentDetails) => {
+          handleFinalSubmit(paymentDetails);
+        }}
+      />
 
     </div>
   );

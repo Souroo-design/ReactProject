@@ -68,6 +68,22 @@ export let mockMenuItems = [
     imageUrl: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80',
     preparationTimeMinutes: 25,
   },
+  {
+    _id: 'item_105',
+    restaurantName: 'Bukhara Royal Grill',
+    mealType: 'Snacks',
+    name: 'Royal Dahi Ke Kebab & Mint Dip',
+    description: 'Crispy spiced yogurt patties with a golden crust and creamy cardamom-infused center, served with tangy mint and coriander dip.',
+    price: 280,
+    category: 'Starters',
+    isAvailable: true,
+    isVegetarian: true,
+    isGlutenFree: false,
+    spicyLevel: 1,
+    rating: 4.8,
+    imageUrl: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80',
+    preparationTimeMinutes: 12,
+  },
 
   // 2. Punjab Dhaba & Rasoi
   {
@@ -134,6 +150,22 @@ export let mockMenuItems = [
     imageUrl: 'https://images.unsplash.com/photo-1546833998-877b37c2e5c6?auto=format&fit=crop&w=800&q=80',
     preparationTimeMinutes: 22,
   },
+  {
+    _id: 'item_205',
+    restaurantName: 'Punjab Dhaba & Rasoi',
+    mealType: 'Snacks',
+    name: 'Amritsari Samosa Chaat with Chole',
+    description: 'Crushed crispy potato samosas topped with tangy spiced chickpea curry, sweetened yogurt, tamarind chutney, and fresh sev.',
+    price: 150,
+    category: 'Starters',
+    isAvailable: true,
+    isVegetarian: true,
+    isGlutenFree: false,
+    spicyLevel: 2,
+    rating: 4.9,
+    imageUrl: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80',
+    preparationTimeMinutes: 10,
+  },
 
   // 3. Dakshin South Tiffin Room
   {
@@ -184,6 +216,22 @@ export let mockMenuItems = [
     imageUrl: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?auto=format&fit=crop&w=800&q=80',
     preparationTimeMinutes: 20,
   },
+  {
+    _id: 'item_304',
+    restaurantName: 'Dakshin South Tiffin Room',
+    mealType: 'Snacks',
+    name: 'Crispy Mysore Bonda & Coconut Dip',
+    description: 'Golden deep-fried spiced flour dumplings crisp on the outside and soft inside, served hot with roasted peanut and coconut chutney.',
+    price: 110,
+    category: 'Starters',
+    isAvailable: true,
+    isVegetarian: true,
+    isGlutenFree: false,
+    spicyLevel: 1,
+    rating: 4.8,
+    imageUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80',
+    preparationTimeMinutes: 10,
+  },
 
   // 4. Hyderabadi Shahi Kitchen
   {
@@ -233,6 +281,22 @@ export let mockMenuItems = [
     rating: 4.9,
     imageUrl: 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?auto=format&fit=crop&w=800&q=80',
     preparationTimeMinutes: 30,
+  },
+  {
+    _id: 'item_406',
+    restaurantName: 'Hyderabadi Shahi Kitchen',
+    mealType: 'Snacks',
+    name: 'Nizami Keema Samosa & Green Chutney',
+    description: 'Flaky triangular pastries generously stuffed with spiced minced mutton, mint, and toasted cumin, served piping hot.',
+    price: 240,
+    category: 'Starters',
+    isAvailable: true,
+    isVegetarian: false,
+    isGlutenFree: false,
+    spicyLevel: 2,
+    rating: 4.9,
+    imageUrl: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80',
+    preparationTimeMinutes: 15,
   },
   {
     _id: 'item_404',

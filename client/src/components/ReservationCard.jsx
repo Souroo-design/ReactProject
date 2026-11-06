@@ -1,5 +1,9 @@
 import React from 'react';
-import { Calendar, Clock, Users, MapPin, Mail, Phone, MessageSquare, CheckCircle, Clock3, AlertCircle, XCircle, Store, Utensils } from 'lucide-react';
+import {
+  Calendar, Clock, Users, MapPin, Mail, Phone, MessageSquare,
+  CheckCircle, Clock3, AlertCircle, XCircle, Store, Utensils,
+  Bike, ShoppingBag, Banknote, QrCode, Lock,
+} from 'lucide-react';
 
 export const ReservationCard = ({ reservation, isStaffView = false, onStatusChange }) => {
   const {
@@ -12,6 +16,11 @@ export const ReservationCard = ({ reservation, isStaffView = false, onStatusChan
     reservationDate,
     timeSlot,
     seatingPreference,
+    orderType,
+    deliveryAddress,
+    paymentMethod,
+    paymentStatus,
+    transactionId,
     specialRequests,
     preOrderedItems,
     totalAmount,
@@ -39,15 +48,57 @@ export const ReservationCard = ({ reservation, isStaffView = false, onStatusChan
     <div className="glass-card rounded-3xl p-6 shadow-md border border-slate-200/80 dark:border-slate-800 space-y-4 hover:shadow-lg transition-all">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800 pb-3">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <Store className="w-3.5 h-3.5" />
-            {restaurantName || 'Bukhara Royal Grill'}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <Store className="w-3.5 h-3.5" />
+              {restaurantName || 'Bukhara Royal Grill'}
+            </span>
+
+            {/* Service & Delivery Mode Badge */}
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              {orderType === 'Doorstep Delivery' ? (
+                <Bike className="w-3.5 h-3.5 text-rose-500" />
+              ) : orderType === 'Takeaway Pickup' ? (
+                <ShoppingBag className="w-3.5 h-3.5 text-amber-500" />
+              ) : (
+                <Store className="w-3.5 h-3.5 text-emerald-500" />
+              )}
+              {orderType || 'Dine-In Table'}
+            </span>
+
+            {/* Payment Status & Method Badge */}
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                paymentStatus === 'completed'
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                  : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+              }`}
+            >
+              {paymentMethod?.includes('QR') ? (
+                <QrCode className="w-3.5 h-3.5" />
+              ) : paymentMethod === 'Cash' ? (
+                <Banknote className="w-3.5 h-3.5" />
+              ) : (
+                <Lock className="w-3.5 h-3.5" />
+              )}
+              {paymentStatus === 'completed'
+                ? `Paid Online (${transactionId || 'Confirmed'})`
+                : paymentStatus === 'cash_on_delivery'
+                ? 'Cash on Delivery'
+                : 'Pay Cash at Counter'}
+            </span>
           </div>
+
           <h4 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             {guestName}
           </h4>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Booking ID: <span className="font-mono">{_id.substring(_id.length - 8)}</span>
+            {deliveryAddress && (
+              <span className="ml-2 font-normal text-slate-600 dark:text-slate-400">
+                • Delivery to: {deliveryAddress}
+              </span>
+            )}
           </p>
         </div>
 
